@@ -1,8 +1,10 @@
 import statistics
 import hfpy_utils
+import json
 
 CHARTS = "charts/"
 FOLDER = "swimdata/"
+JSONDATA = "records.json"
 
 
 def read_swim_data(filename):
@@ -60,8 +62,15 @@ def produce_bar_chart(fn, location=CHARTS):
                             <svg height="30" width="400">
                                 <rect height="30" width="{bar_width}" style="fill:rgb(0,0,255);" />
                             </svg>{t}<br />"""
+    with open(JSONDATA) as jf:
+        records = json.load(jf)
+    COURSES = ("LC Men", "LC Women", "SC Men", "SC Women")
+    times = []
+    for course in COURSES:
+        times.append(records[course][event_lookup(fn)])
     footer = f"""
                             <p>Average time: {average}</p>
+                            <p>M: {times[0]} ({times[2]}) <br />W: {times[1]} ({times[3]})</p>
                         </body>
                     </html>"""
     page = header + body + footer
@@ -70,3 +79,23 @@ def produce_bar_chart(fn, location=CHARTS):
         print(page, file=sf)
 
     return save_to
+
+
+def event_lookup(text):
+    """Convert for filenames to dictionary keys.
+
+    Given an event description (the name of smimmer's file), convert
+    the descriptor into a lookup key which can be used with the "records"
+    dictionary.
+    """
+    conversions = {
+        "Free": "freestyle",
+        "Back": "backstroke",
+        "Breast": "breaststroke",
+        "Fly": "butterfly",
+        "IM": "individual medley"
+    }
+
+    *_, distance, stroke = text.removesuffix(".txt").split("-")
+    
+    return f"{distance} {conversions[stroke]}"
